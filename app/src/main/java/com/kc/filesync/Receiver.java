@@ -1,5 +1,8 @@
 package com.kc.filesync;
 
+import android.content.Context;
+import android.content.Intent;
+
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -20,6 +23,14 @@ public class Receiver {
 	public void setThreadRunning(boolean isThreadRunning) {
 		this.isThreadRunning = isThreadRunning;
 	}
+
+	private Context context;
+
+	public void setContext(Context context){
+		this.context = context;
+	}
+
+	private FSListener listener;
 
 	public void receive(){
 		
@@ -54,9 +65,12 @@ public class Receiver {
 							}
 							case FileSync.COMMIT_FILE:{
 								if (!manageCommitFile(sock)){
-									throw new Exception("Problem in commiting content");
+									throw new Exception("Problem in committing content");
 								}
 								status = FileSync.READ_METADATA;
+								Intent intent = new Intent();
+								intent.putExtra("FileName", fileMetadata.getFileName());
+								listener.update(intent);
 								fileMetadata = null;
 							}
 						}
@@ -65,7 +79,6 @@ public class Receiver {
 					
 					servsock.close();
 				} catch (Exception e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
@@ -98,7 +111,8 @@ public class Receiver {
 		try{
 		    byte[] mybytearray = new byte[fileMetadata.getFileSize()];
 		    InputStream is = sock.getInputStream();
-		    FileOutputStream fos = new FileOutputStream("E:\\Workspace\\Misc\\Temp\\Neon\\" + fileMetadata.getFileName());
+			System.out.println(context.getFilesDir() );
+		    FileOutputStream fos = new FileOutputStream(context.getFilesDir() + "/" + fileMetadata.getFileName());
 		    BufferedOutputStream bos = new BufferedOutputStream(fos);
 		    int bytesRead = is.read(mybytearray, 0, mybytearray.length);
 		    if (bytesRead == -1){
@@ -136,5 +150,9 @@ public class Receiver {
 			ex.printStackTrace();
 		}
 		return bRet;
+	}
+
+	public void setListener(FSListener listener) {
+		this.listener = listener;
 	}
 }

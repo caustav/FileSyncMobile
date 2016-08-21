@@ -197,4 +197,8 @@ public class Sender {
 		}
 		return bRet;
 	}
+
+	public void reset() {
+		threads.clear();
+	}
 }

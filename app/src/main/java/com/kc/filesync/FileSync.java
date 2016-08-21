@@ -6,6 +6,8 @@ import android.net.Uri;
 import android.provider.OpenableColumns;
 import android.util.Log;
 
+import com.example.kaustav.myapplicationwelcome.MainActivity;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -19,29 +21,22 @@ public class FileSync {
 	public static final int READ_METADATA = 0;
 	public static final int WRITE_FILECONTENT = 1;
 	public static final int COMMIT_FILE = 2;
+	private final FSListener listener;
 
 	private Sender sender = new Sender();
 	private Receiver receiver = new Receiver();
 
-	private static final String TAG = "MAW";
+	private static final String TAG = "FILE_SYNC";
 
-	public void doSync(){
+	public FileSync(FSListener listener) {
+		this.listener = listener;
+	}
+
+	public void doSync(Context context){
+		receiver.setListener(listener);
+		receiver.setContext(context);
 		receiver.receive();
-		sendAllFiles("192.168.0.103");
-//		while(true){
-//			System.out.println("Enter file path: ");
-//			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-//			try {
-//				String filePath = br.readLine();
-//				if (filePath.isEmpty()){
-//					throw new Exception("File path is empty");
-//				}
-//				sender.send(filePath);
-//			} catch (Exception e) {
-//				e.printStackTrace();
-//				break;
-//			}
-//		}
+//		sendAllFiles("192.168.0.103");
 	}
 
 	public void sendAsFiles(String ipaddress, ArrayList<File> files){
@@ -63,6 +58,7 @@ public class FileSync {
 	}
 
 	public void sendFileContainers(String ipaddress, ArrayList<FileContainer> files){
+		sender.reset();
 		for (FileContainer file : files){
 			sender.sendAsFileContainer(file);
 		}
