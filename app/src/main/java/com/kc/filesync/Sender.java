@@ -1,16 +1,12 @@
 package com.kc.filesync;
+
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.OpenableColumns;
-import android.util.Log;
 
 import java.io.BufferedInputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
@@ -27,31 +23,8 @@ public class Sender {
     private Context context;
 
     public Sender(){
-		threads = new ArrayList<Thread>();
+		threads = new ArrayList<>();
 	}
-	
-//	public void sendFilePath(final String filePath){
-//
-//		Thread thread = new Thread(new Runnable() {
-//
-//			private String fPath = filePath;
-//
-//			@Override
-//			public void run() {
-//				try {
-//					File file = new File(fPath);
-//					manageFileMetadata(file);
-//					sendFileContent(file);
-//					readEOF();
-//				    System.out.println("File sent as " + filePath);
-//				} catch (Exception e) {
-//					e.printStackTrace();
-//				}
-//			}
-//		});
-//
-//		threads.add(thread);
-//	}
 
 	public void sendAsFile(final Uri uriFile){
 
@@ -64,7 +37,7 @@ public class Sender {
 				try {
 					manageFileMetadata(uri);
 					sendFileContent(uri);
-					//readEOF();
+                    sendEOF();
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -95,41 +68,21 @@ public class Sender {
 		
 		thread.start();
 	}
-	
-//	private boolean manageFileMetadata(File file){
-//		boolean bRet = false;
-//		try{
-//			Socket sock = new Socket(destIPAddress, FileSync.PORT);
-//			String fileName = file.getName();
-//			String fileSize = String.valueOf(file.length());
-//			DataOutputStream dout=new DataOutputStream(sock.getOutputStream());
-//			String buffer = fileName + "," + fileSize;
-//			dout.writeUTF(buffer);
-//			dout.flush();
-//			dout.close();
-//			sock.close();
-//			bRet = true;
-//		}catch(Exception ex){
-//			ex.printStackTrace();
-//
-//		}
-//		return bRet;
-//	}
 
 	private boolean sendFileContent(Uri uri){
 		boolean bRet = false;
         Capsule capsule = new Capsule();
-        int fileLength = Integer.parseInt(capsuleFileMetdata.get("Size").toString());
+        int fileLength = Integer.parseInt(capsuleFileMetdata.get("Size"));
 		try{
             InputStream inputStream = context.getContentResolver().openInputStream(uri);
+			if (null == inputStream){
+				throw new FileNotFoundException("Selected file not found in the device.");
+			}
             BufferedInputStream bis = new BufferedInputStream(inputStream);
-//            byte[] byteArray = new byte[1024*1024*10];
-//            bis.read(byteArray, 0, byteArray.length);
-			byte bufferTemp[] = new byte[1024*1024*10];
             byte buffer[] = new byte[1024*1024*10 + 1];
 			int read;
-			Socket sock = null;
-			OutputStream outputStream = null;
+			Socket sock;
+			OutputStream outputStream;
             capsule.set("Status", "ON");
             capsule.set("MODE", "SEND");
             listener.update(capsule);
@@ -147,7 +100,6 @@ public class Sender {
                 capsule.set("PROGRESS", progress);
                 listener.update(capsule);
             }
-//		    System.out.println(String.valueOf(bytesRead));
             capsule.set("Status", "OFF");
             listener.update(capsule);
 			bRet = true;
@@ -157,65 +109,26 @@ public class Sender {
 		}
 		return bRet;
 	}
-	
-	private boolean readEOF(){
-		boolean bRet = false;
-		DataInputStream dis;
-		try {
-			Socket sock = new Socket(destIPAddress, FileSync.PORT);
-			dis = new DataInputStream(sock.getInputStream());
-			String  eof = (String)dis.readUTF();
-			System.out.println(eof);
-			bRet = true;
-			sock.close();
-		} catch (IOException e) {
-			bRet = false;
-			e.printStackTrace();
-		}
-		return bRet;
-	}
-
-//    private boolean receiveAck(Socket sock, String text){
-//        boolean bRet = false;
-//        DataInputStream dis;
-//        try {
-//            dis = new DataInputStream(sock.getInputStream());
-//            String  ackText = (String)dis.readUTF();
-//            if (text.equals(ackText)){
-//                bRet = true;
-//            }
-//            System.out.println(ackText);
-//            sock.close();
-//        } catch (IOException e) {
-//            bRet = false;
-//            e.printStackTrace();
-//        }
-//        return bRet;
-//    }
 
 	public void setDestinationIPAddress(String ipaddress) {
 		this.destIPAddress = ipaddress;
 	}
 
-//	public void sendAsFileContainer(final FileContainer fileContainer) {
-//		Thread thread = new Thread(new Runnable() {
-//
-//			private FileContainer file = fileContainer;
-//
-//			@Override
-//			public void run() {
-//				try {
-//					manageFileMetadata(file.getMetadata());
-//					sendFileContent(file.getContent());
-//					readEOF();
-//				} catch (Exception e) {
-//					e.printStackTrace();
-//				}
-//			}
-//		});
-//
-//		threads.add(thread);
-//	}
+    private boolean sendEOF(){
+        boolean bRet = false;
+        try{
+            Socket sock = new Socket(destIPAddress, FileSync.PORT);
+            OutputStream os = sock.getOutputStream();
+            byte[] buffer = new byte[1];
+            buffer[0] = 3;
+            os.write(buffer);
+            sock.close();
+            bRet = true;
+        }catch(Exception ex){
+            ex.printStackTrace();
+        }
+        return bRet;
+    }
 
     private boolean manageFileMetadata(Uri fileUri){
         boolean bRet = false;
@@ -233,13 +146,8 @@ public class Sender {
                 buffer[i+1] = b[i];
             }
             os.write(buffer);
-//            DataOutputStream dout = new DataOutputStream(sock.getOutputStream());
-//            dout.writeUTF(buffer);
-//            dout.flush();
-//            dout.close();
             sock.close();
             bRet = true;
-//            bRet = receiveAck(sock, "METADATA_RECEIVED");;
         }catch(Exception ex){
             ex.printStackTrace();
         }
@@ -255,53 +163,20 @@ public class Sender {
                 String displayName = cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME));
                 capsule.set("Name", displayName);
                 int sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE);
-                String size = null;
+                String size;
                 if (!cursor.isNull(sizeIndex)) {
                     size = cursor.getString(sizeIndex);
-                    capsule.set("Size", size);
                 } else {
                     size = "Unknown";
                 }
+				capsule.set("Size", size);
             }
         } finally {
-            cursor.close();
+			if (cursor != null)
+            	cursor.close();
         }
         return capsule;
     }
-
-//	private boolean manageFileMetadata(FileMetadata fileMetadata){
-//		boolean bRet = false;
-//		try{
-//			Socket sock = new Socket(destIPAddress, FileSync.PORT);
-//			String fileName = fileMetadata.getFileName();
-//			String fileSize = String.valueOf(fileMetadata.getFileSize());
-//			DataOutputStream dout=new DataOutputStream(sock.getOutputStream());
-//			String buffer = fileName + "," + fileSize;
-//			dout.writeUTF(buffer);
-//			dout.flush();
-//			dout.close();
-//			sock.close();
-//			bRet = true;
-//		}catch(Exception ex){
-//			ex.printStackTrace();
-//
-//		}
-//		return bRet;
-//	}
-//
-//	private boolean sendFileContent(byte[] bytearray){
-//		boolean bRet = false;
-//		try{
-//			Socket sock = new Socket(destIPAddress, FileSync.PORT);
-//			OutputStream os = sock.getOutputStream();
-//			os.write(bytearray, 0, bytearray.length);
-//			os.flush();
-//			sock.close();
-//		}catch(Exception ex){
-//			ex.printStackTrace();
-//		}
-//		return bRet;
-//	}
 
 	public void reset() {
 		threads.clear();
