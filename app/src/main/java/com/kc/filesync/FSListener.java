@@ -7,5 +7,5 @@ import android.content.Intent;
  */
 public interface FSListener {
 
-    public void update(Intent intent);
+    void update(Capsule capsule);
 }

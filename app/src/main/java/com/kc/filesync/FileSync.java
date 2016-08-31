@@ -6,8 +6,6 @@ import android.net.Uri;
 import android.provider.OpenableColumns;
 import android.util.Log;
 
-import com.example.kaustav.myapplicationwelcome.MainActivity;
-
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -28,74 +26,79 @@ public class FileSync {
 
 	private static final String TAG = "FILE_SYNC";
 
+    private Context context;
+
 	public FileSync(FSListener listener) {
 		this.listener = listener;
 	}
 
 	public void doSync(Context context){
+        this.context = context;
 		receiver.setListener(listener);
 		receiver.setContext(context);
 		receiver.receive();
-//		sendAllFiles("192.168.0.103");
 	}
 
-	public void sendAsFiles(String ipaddress, ArrayList<File> files){
-		for (File file : files){
-			sender.sendAsFile(file);
-		}
-
-		sender.setDestinationIPAddress(ipaddress);
-		sender.runDispatcher();
-	}
-
-	public void sendFilePaths(String ipaddress, ArrayList<String> filePaths){
-		for (String file : filePaths){
-			sender.sendFilePath(file);
-		}
-
-		sender.setDestinationIPAddress(ipaddress);
-		sender.runDispatcher();
-	}
-
-	public void sendFileContainers(String ipaddress, ArrayList<FileContainer> files){
+	public void sendAsFiles(String ipaddress, ArrayList<Uri> uries){
 		sender.reset();
-		for (FileContainer file : files){
-			sender.sendAsFileContainer(file);
+		for (Uri uri : uries){
+			sender.sendAsFile(uri);
 		}
-
+		sender.setListener(listener);
+        sender.setContext(context);
+		ipaddress = "192.168.0.103";
 		sender.setDestinationIPAddress(ipaddress);
 		sender.runDispatcher();
 	}
 
-	private void sendAllFiles(String ipaddress){
+//	public void sendFilePaths(String ipaddress, ArrayList<String> filePaths){
+//		for (String file : filePaths){
+//			sender.sendFilePath(file);
+//		}
+//
+//		sender.setDestinationIPAddress(ipaddress);
+//		sender.runDispatcher();
+//	}
+//
+//	public void sendFileContainers(String ipaddress, ArrayList<FileContainer> files){
+//		sender.reset();
+//		for (FileContainer file : files){
+//			sender.sendAsFileContainer(file);
+//		}
+//
+//		sender.setDestinationIPAddress(ipaddress);
+//		sender.runDispatcher();
+//	}
+//
+//	private void sendAllFiles(String ipaddress){
+//
+//		File folder = new File("/storage/emulated/0/Download/");
+//		File[] listOfFiles = folder.listFiles();
+//
+//		for (int i = 0; i < listOfFiles.length; i++) {
+//			if (listOfFiles[i].isFile()) {
+//				sender.sendFilePath(listOfFiles[i].getPath());
+//				System.out.println("File " + listOfFiles[i].getName());
+//			} else if (listOfFiles[i].isDirectory()) {
+//				System.out.println("Directory " + listOfFiles[i].getName());
+//			}
+//		}
+//		sender.setDestinationIPAddress(ipaddress);
+//		sender.runDispatcher();
+//	}
 
-		File folder = new File("/storage/emulated/0/Download/");
-		File[] listOfFiles = folder.listFiles();
-
-		for (int i = 0; i < listOfFiles.length; i++) {
-			if (listOfFiles[i].isFile()) {
-				sender.sendFilePath(listOfFiles[i].getPath());
-				System.out.println("File " + listOfFiles[i].getName());
-			} else if (listOfFiles[i].isDirectory()) {
-				System.out.println("Directory " + listOfFiles[i].getName());
-			}
-		}
-		sender.setDestinationIPAddress(ipaddress);
-		sender.runDispatcher();
-	}
-
-	public void syncFiles(String ipaddress, ArrayList<Uri> fileUris, Context context){
-		ArrayList<FileContainer> containers = new ArrayList<FileContainer>();
-		for (Uri uri : fileUris){
-			FileContainer container = new FileContainer();
-			FileMetadata fileMetadata = getFileMetaData(uri, context);
-			byte [] content = getFileContentInBytes(uri, context, fileMetadata);
-			container.setMetadata(fileMetadata);
-			container.setContent(content);
-			containers.add(container);
-		}
-		sendFileContainers(ipaddress, containers);
-	}
+//	public void syncFiles(String ipaddress, ArrayList<Uri> fileUris, Context context){
+//		ArrayList<FileContainer> containers = new ArrayList<FileContainer>();
+//		for (Uri uri : fileUris){
+//			FileContainer container = new FileContainer();
+//			FileMetadata fileMetadata = getFileMetaData(uri, context);
+//			byte [] content = getFileContentInBytes(uri, context, fileMetadata);
+//			container.setMetadata(fileMetadata);
+//			container.setContent(content);
+//			containers.add(container);
+//		}
+//		sendFileContainers(ipaddress, containers);
+//	}
 
 	private FileMetadata getFileMetaData(Uri uri, Context context) {
 		FileMetadata fileMetadata = new FileMetadata();

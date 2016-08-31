@@ -8,35 +8,35 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     android:id="@+id/rootView"
-    tools:context="com.example.kaustav.myapplicationwelcome.MainActivity">
+    tools:context="com.example.kaustav.filesyncmobile.MainActivity">
 
     <Button
+        android:background = "@drawable/roundedbutton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Browse ..."
-        android:id="@+id/browse"
+        android:text="Capture ..."
+        android:id="@+id/buttonYou"
         android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
+
+    <Button
+        android:background = "@drawable/roundedbutton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Files ..."
+        android:id="@+id/buttonShare"
+        android:layout_alignTop="@+id/buttonYou"
+        android:layout_alignRight="@+id/imageViewQR"
+        android:layout_alignEnd="@+id/imageViewQR" />
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="600px"
+        android:id="@+id/imageViewQR"
+        android:layout_alignParentTop="true"
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true"
-        android:layout_marginRight="28dp"
-        android:layout_marginEnd="28dp"
-        android:layout_marginBottom="47dp" />
+        android:layout_marginTop="46dp" />
 
-    <TextView
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:text="IP Address"
-        android:id="@+id/textViewSelf"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
-
-    <EditText
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text=" "
-        android:id="@+id/editText"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
 </RelativeLayout>
