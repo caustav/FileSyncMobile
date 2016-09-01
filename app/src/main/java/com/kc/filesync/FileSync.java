@@ -46,6 +46,7 @@ public class FileSync {
 		}
 		sender.setListener(listener);
         sender.setContext(context);
+		ipaddress = "192.168.1.101";
 		sender.setDestinationIPAddress(ipaddress);
 		sender.runDispatcher();
 	}

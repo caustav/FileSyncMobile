@@ -2,6 +2,7 @@ package com.kc.filesync;
 
 import android.content.Context;
 import android.os.Environment;
+import android.util.Log;
 
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
@@ -11,8 +12,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class Receiver {
-	
-	private boolean isThreadRunning;
+
+    private boolean isThreadRunning;
 
 	public boolean isThreadRunning() {
 		return isThreadRunning;
@@ -105,11 +106,8 @@ public class Receiver {
             }
             FileOutputStream fos = new FileOutputStream(Environment.getExternalStorageDirectory() + "/FileSyncMobile" + "/" + fileMetadata.getFileName(), isAppending);
 			BufferedOutputStream bos = new BufferedOutputStream(fos);
-			int bytesRead = is.read(fileContent, 0, fileContent.length);
-			if (bytesRead == -1){
-				bytesRead = 0;
-			}
-			int byteOffset;
+            int bytesRead = 0;
+            int byteOffset;
 			while(bytesRead < fileContent.length){
 				byteOffset = is.read(fileContent, bytesRead, fileContent.length - bytesRead);
 				if (byteOffset == -1){
@@ -126,7 +124,7 @@ public class Receiver {
             listener.update(capsule);
 			bos.write(fileContent, 0, bytesRead);
 			bos.close();
-		}catch(Exception ex){
+        }catch(Exception ex){
 			ex.printStackTrace();
 		}
 	}

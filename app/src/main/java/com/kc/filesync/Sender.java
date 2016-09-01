@@ -86,19 +86,23 @@ public class Sender {
             capsule.set("Status", "ON");
             capsule.set("MODE", "SEND");
             listener.update(capsule);
-			while((read = bis.read(buffer, 1, buffer.length - 1)) != -1){
-				sock = new Socket(destIPAddress, FileSync.PORT);
-				outputStream = sock.getOutputStream();
+            while(bis.available() > 0){
                 buffer[0] = (byte)2;
-				outputStream.write(buffer, 0, read);
-				outputStream.flush();
+                int bytesRead = 1;
+                int byteOffset = 0;
+                while(bytesRead < buffer.length){
+                    byteOffset = bis.read(buffer, bytesRead, buffer.length - bytesRead);
+                    if (byteOffset == -1){
+                        break;
+                    }else{
+                        bytesRead += byteOffset;
+                    }
+                }
+                sock = new Socket(destIPAddress, FileSync.PORT);
+                outputStream = sock.getOutputStream();
+                outputStream.write(buffer, 0, bytesRead);
+                System.out.println(bytesRead);
                 sock.close();
-				fileSizeTemp += read;
-                double val = ((double)fileSizeTemp/(double)fileLength);
-                int progress =  (int)(val * 100);
-                capsule.set("Status", null);
-                capsule.set("PROGRESS", progress);
-                listener.update(capsule);
             }
             capsule.set("Status", "OFF");
             listener.update(capsule);
