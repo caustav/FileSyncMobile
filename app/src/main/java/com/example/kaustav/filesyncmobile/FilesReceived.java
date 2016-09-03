@@ -1,6 +1,8 @@
 package com.example.kaustav.filesyncmobile;
 
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
@@ -8,6 +10,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.MimeTypeMap;
 import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.Toast;
@@ -37,7 +40,6 @@ public class FilesReceived extends AppCompatActivity implements FSListener {
                 imageAdapter.updatWitheImage(String.valueOf(msg.obj));
             }
             super.handleMessage(msg);
-            invalidateDefered();
         }
     };
 
@@ -57,28 +59,32 @@ public class FilesReceived extends AppCompatActivity implements FSListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_files_received);
-        initGridView();
         timer = new Timer();
-    }
-
-    private void initGridView(){
         gridView = (GridView) findViewById(R.id.gridview);
         imageAdapter = new ImageAdapter(this);
         gridView.setAdapter(imageAdapter);
         gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View v,
                                     int position, long id) {
-                Toast.makeText(FilesReceived.this, "" + position, Toast.LENGTH_SHORT).show();
+                //Toast.makeText(FilesReceived.this, "" + position, Toast.LENGTH_SHORT).show();
+                openFile(position);
             }
         });
 
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                updateWithImages();
-            }
-        });
-        thread.start();
+        updateWithImages();
+    }
+
+    private void openFile(int position){
+        MimeTypeMap myMime = MimeTypeMap.getSingleton();
+        Intent newIntent = new Intent(Intent.ACTION_VIEW);
+        String mimeType = myMime.getMimeTypeFromExtension(getFileExtensionFromUri(imageAdapter.getItem(position)));
+        newIntent.setDataAndType(imageAdapter.getItem(position), mimeType);
+        newIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try {
+            getApplicationContext().startActivity(newIntent);
+        } catch (ActivityNotFoundException e) {
+            Toast.makeText(getApplicationContext(), "No handler for this type of file.", Toast.LENGTH_LONG).show();
+        }
     }
 
     private void invalidateDefered(){
@@ -100,7 +106,6 @@ public class FilesReceived extends AppCompatActivity implements FSListener {
     public void update(Capsule capsule) {
         if (capsule != null){
             String fileName = String.valueOf(capsule.get("FileName"));
-            System.out.println(fileName);
             Message msg = handler.obtainMessage();
             msg.what = ADD_THUMBNAIL;
             msg.obj = Environment.getExternalStorageDirectory() + "/FileSyncMobile" + "/" + fileName;
@@ -109,24 +114,32 @@ public class FilesReceived extends AppCompatActivity implements FSListener {
     }
 
     public void updateWithImages() {
+
         File file = new File(Environment.getExternalStorageDirectory() + "/FileSyncMobile");
-        File[] listOfFiles =  file.listFiles();
-        Arrays.sort(listOfFiles, new Comparator<File>(){
-            public int compare(File f1, File f2)
-            {
-                return Long.valueOf(f1.lastModified()).compareTo(f2.lastModified());
-            }
-        });
-        if (listOfFiles.length > 0){
-            for (int i = 0; i < listOfFiles.length; i++) {
-                if (listOfFiles[i].isFile()) {
-                    Message msg = handler.obtainMessage();
-                    msg.what = ADD_THUMBNAIL;
-                    msg.obj = listOfFiles[i].getAbsolutePath();
-                    handler.sendMessage(msg);
+        final File[] listOfFiles =  file.listFiles();
+
+        Thread thread = new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                for (int i = 0; i < listOfFiles.length; i ++){
+                    Capsule capsule = new Capsule();
+                    capsule.set("FileName", listOfFiles[i].getName());
+                    update(capsule);
                 }
             }
+        });
+        thread.start();
+    }
+
+    private String getFileExtensionFromUri(Uri uri){
+        String filePath = uri.getPath();
+        int i = filePath.lastIndexOf('.');
+        String extension = "";
+        if (i > 0) {
+            extension = filePath.substring(i + 1);
         }
+        return extension;
     }
 
 }
