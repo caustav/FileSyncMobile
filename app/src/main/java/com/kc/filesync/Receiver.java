@@ -83,9 +83,10 @@ public class Receiver {
 							}else if (flag[0] == 2 && !isStopped){
 								readFileContent(is, fileMetadata);
 							}else if (flag[0] == 3 && !isStopped){
-                                fileMetadata = null;
-                                capsule.set("Status", "OFF");
+                                capsule.set("Status", "COMPLETE");
+                                capsule.set("FileName", fileMetadata.getFileName());
                                 listener.update(capsule);
+                                fileMetadata = null;
                             }
 							else if (flag[0] == 5){
 								disconnect();

@@ -1,6 +1,8 @@
 package com.example.kaustav.filesyncmobile;
 
 import android.Manifest;
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.content.ClipData;
@@ -17,6 +19,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -76,6 +79,9 @@ public class MainActivity extends AppCompatActivity implements  FSListener, ZXin
     private int STATUS_PROGRESS = 2;
     private int STATUS_CONNECTED = 3;
     private int STATUS_DISCONNECTED = 4;
+    private int STATUS_COMPLETE = 5;
+
+    int notificationNumber = 0;
 
     final Handler handlerProgress = new Handler(){
 
@@ -103,6 +109,13 @@ public class MainActivity extends AppCompatActivity implements  FSListener, ZXin
             }else if(msg.what == STATUS_DISCONNECTED){
                 Capsule capsule = (Capsule)msg.obj;
                 manageConnectionUI(null);
+            }else if (msg.what == STATUS_COMPLETE){
+                if (progressBar != null){
+                    progressBar.dismiss();
+                }
+                Capsule capsule = (Capsule)msg.obj;
+                String s = capsule.get("FileName");
+                buildNotification("Halver", s + " Received");
             }
             super.handleMessage(msg);
         }
@@ -271,9 +284,12 @@ public class MainActivity extends AppCompatActivity implements  FSListener, ZXin
                 msg.what = STATUS_CONNECTED;
                 msg.obj = capsule;
                 handlerProgress.sendMessage(msg);
-            }
-            else if (capsule.get("Status") != null && capsule.get("Status").equals("DISCONNECTED")){
+            }else if (capsule.get("Status") != null && capsule.get("Status").equals("DISCONNECTED")){
                 msg.what = STATUS_DISCONNECTED;
+                msg.obj = capsule;
+                handlerProgress.sendMessage(msg);
+            }else if (capsule.get("Status") != null && capsule.get("Status").equals("COMPLETE")){
+                msg.what = STATUS_COMPLETE;
                 msg.obj = capsule;
                 handlerProgress.sendMessage(msg);
             }else if(capsule.get("PROGRESS") != null){
@@ -385,5 +401,16 @@ public class MainActivity extends AppCompatActivity implements  FSListener, ZXin
             mScannerView.stopCamera();
             initUI();
         }
+    }
+
+    private void buildNotification(String title, String text){
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
+                        .setSmallIcon(R.drawable.connect)
+                        .setContentTitle(title)
+                        .setContentText(text);
+
+        int mNotificationId = notificationNumber ++;
+        NotificationManager mNotifyMgr = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        mNotifyMgr.notify(mNotificationId, mBuilder.build());
     }
 }
