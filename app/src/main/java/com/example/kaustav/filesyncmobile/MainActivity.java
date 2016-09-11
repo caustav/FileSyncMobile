@@ -3,6 +3,7 @@ package com.example.kaustav.filesyncmobile;
 import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.content.ClipData;
@@ -24,6 +25,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.webkit.MimeTypeMap;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -116,7 +118,7 @@ public class MainActivity extends AppCompatActivity implements  FSListener, ZXin
                 }
                 Capsule capsule = (Capsule)msg.obj;
                 String s = capsule.get("FileName");
-                buildNotification("Halver", s + " Received");
+                buildNotification("Halver", s);
             }
             super.handleMessage(msg);
         }
@@ -404,14 +406,37 @@ public class MainActivity extends AppCompatActivity implements  FSListener, ZXin
         }
     }
 
-    private void buildNotification(String title, String text){
-        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
-                        .setSmallIcon(R.drawable.connect)
-                        .setContentTitle(title)
-                        .setContentText(text);
+    private void buildNotification(String title, String fileName){
+        String text = fileName + " Received";
+        int notificationId = notificationNumber ++;
+        NotificationManager notifyMgr = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        MimeTypeMap myMime = MimeTypeMap.getSingleton();
+        String filePath = getFilePathFromFileName(fileName);
+        String mimeType = myMime.getMimeTypeFromExtension(getFileExtensionFromPath(filePath));
+        intent.setDataAndType(Uri.fromFile(new File(filePath)), mimeType);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, (int) System.currentTimeMillis(), intent, 0);
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
+                .setContentIntent(pendingIntent)
+                .setSmallIcon(R.drawable.connect)
+                .setContentTitle(title)
+                .setContentText(text);
+        Notification notification = builder.build();
+        notification.flags |= Notification.FLAG_AUTO_CANCEL;
+        notifyMgr.notify(notificationId, notification);
+    }
 
-        int mNotificationId = notificationNumber ++;
-        NotificationManager mNotifyMgr = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        mNotifyMgr.notify(mNotificationId, mBuilder.build());
+    private String getFilePathFromFileName(String fileName){
+        return Environment.getExternalStorageDirectory() + "/FileSyncMobile/" + fileName;
+    }
+
+    private String getFileExtensionFromPath(String filePath){
+        int i = filePath.lastIndexOf('.');
+        String extension = "";
+        if (i > 0) {
+            extension = filePath.substring(i + 1);
+        }
+        return extension;
     }
 }
