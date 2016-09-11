@@ -105,6 +105,7 @@ public class MainActivity extends AppCompatActivity implements  FSListener, ZXin
                 progressBar.setProgress(Integer.parseInt(s));
             }else if(msg.what == STATUS_CONNECTED){
                 Capsule capsule = (Capsule)msg.obj;
+                destIPAddress = capsule.get("SenderIP");
                 manageConnectionUI(capsule);
             }else if(msg.what == STATUS_DISCONNECTED){
                 Capsule capsule = (Capsule)msg.obj;

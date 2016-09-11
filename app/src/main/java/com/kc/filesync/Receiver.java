@@ -122,6 +122,7 @@ public class Receiver {
             readerListener.updateConnectionInfo(conInfo);
             if (capsule != null){
                 capsule.set("CONNECTION-INFO", conInfo.getSenderDeviceName());
+                capsule.set("SenderIP", conInfo.getSenderDeviceIpAddress());
             }
         } catch (Exception e) {
             e.printStackTrace();
