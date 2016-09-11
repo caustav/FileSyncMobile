@@ -73,6 +73,9 @@ public class Receiver {
 							InputStream is = sock.getInputStream();
 							byte[] flag = new byte[1];
 							is.read(flag, 0, flag.length);
+                            if (!isAllowed(sock)){
+                                continue;
+                            }
 							if (flag[0] == 1 && !isStopped){
                                 fileSizeTemp = 0;
                                 capsule.set("Status", "ON");
@@ -197,4 +200,16 @@ public class Receiver {
 		listener.update(capsule);
 		isStopped = true;
 	}
+
+    private boolean isAllowed(Socket sock){
+        if (readerListener.getConnectionInfo() != null){
+            return true;
+        }else {
+            String peerIpAddress = readerListener.getConnectionInfo().getSenderDeviceIpAddress();
+            if (!sock.getInetAddress().getHostAddress().equals(peerIpAddress)) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

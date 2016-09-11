@@ -6,4 +6,5 @@ package com.kc.filesync;
 public interface ReaderListener {
 
     void updateConnectionInfo(ConnectionInfo connectionInfo);
+    ConnectionInfo getConnectionInfo();
 }

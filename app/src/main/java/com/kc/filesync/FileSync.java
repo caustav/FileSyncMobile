@@ -69,6 +69,11 @@ public class FileSync implements ReaderListener{
         this.syncingMode = SYNCING_MODE_RECEIVE;
     }
 
+    @Override
+    public ConnectionInfo getConnectionInfo() {
+        return connectionInfo;
+    }
+
     public void stop() {
         if (syncingMode == SYNCING_MODE_RECEIVE){
             receiver.stop();
