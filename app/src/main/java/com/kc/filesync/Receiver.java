@@ -2,7 +2,6 @@ package com.kc.filesync;
 
 import android.content.Context;
 import android.os.Environment;
-import android.util.Log;
 
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
@@ -15,7 +14,17 @@ public class Receiver {
 
     private boolean isThreadRunning;
 
-	public boolean isThreadRunning() {
+    public boolean isStopped() {
+        return isStopped;
+    }
+
+    public void setStopped(boolean stopped) {
+        isStopped = stopped;
+    }
+
+    private boolean isStopped = false;
+
+    public boolean isThreadRunning() {
 		return isThreadRunning;
 	}
 
@@ -23,19 +32,31 @@ public class Receiver {
 		this.isThreadRunning = isThreadRunning;
 	}
 
-	private Context context;
-
 	public void setContext(Context context){
-		this.context = context;
 	}
 
 	private FSListener listener;
 
+    public ReaderListener getReaderListener() {
+        return readerListener;
+    }
+
+    public void setReaderListener(ReaderListener readerListener) {
+        this.readerListener = readerListener;
+    }
+
+    private ReaderListener readerListener;
+
     private int fileSizeTemp;
 
-	public void receive(){
+    public FSListener getListener() {
+        return listener;
+    }
+
+    public void receive(){
 		
-		isThreadRunning = true; 
+		isThreadRunning = true;
+
 		
 		Thread thread = new Thread(new Runnable() {
 			
@@ -52,23 +73,33 @@ public class Receiver {
 							InputStream is = sock.getInputStream();
 							byte[] flag = new byte[1];
 							is.read(flag, 0, flag.length);
-							if (flag[0] == 1){
+							if (flag[0] == 1 && !isStopped){
                                 fileSizeTemp = 0;
                                 capsule.set("Status", "ON");
+								capsule.set("MODE", "RECEIVE");
                                 listener.update(capsule);
 								fileMetadata = new FileMetadata();
 								readFileMetadata(is, fileMetadata);
-							}else if (flag[0] == 2){
+							}else if (flag[0] == 2 && !isStopped){
 								readFileContent(is, fileMetadata);
-							}else if (flag[0] == 3){
+							}else if (flag[0] == 3 && !isStopped){
                                 fileMetadata = null;
                                 capsule.set("Status", "OFF");
                                 listener.update(capsule);
                             }
+							else if (flag[0] == 5){
+								disconnect();
+							}else if (flag[0] == 4){
+                                isStopped = false;
+								capsule.set("Status", "CONNECTED");
+                                readConnectionInfo(is, capsule);
+								listener.update(capsule);
+							}
 							sock.close();
 						}
 						servsock.close();
 					}catch(Exception ex){
+                        stop();
 						ex.printStackTrace();
 					}
 				} catch (Exception e) {
@@ -79,7 +110,24 @@ public class Receiver {
 		
 		thread.start();
 	}
-	private void readFileMetadata(InputStream is, FileMetadata fileMetadata){
+
+    private void readConnectionInfo(InputStream is, Capsule capsule) {
+        byte[] arrayMetadata = new byte[1024];
+        try {
+            is.read(arrayMetadata, 0, arrayMetadata.length);
+            String str = new String(arrayMetadata, "UTF-8");
+            ConnectionInfo conInfo = new ConnectionInfo();
+            conInfo.load(str);
+            readerListener.updateConnectionInfo(conInfo);
+            if (capsule != null){
+                capsule.set("CONNECTION-INFO", conInfo.getSenderDeviceName());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void readFileMetadata(InputStream is, FileMetadata fileMetadata){
 		byte[] arrayMetadata = new byte[1024];
 		try {
 			is.read(arrayMetadata, 0, arrayMetadata.length);
@@ -125,11 +173,26 @@ public class Receiver {
 			bos.write(fileContent, 0, bytesRead);
 			bos.close();
         }catch(Exception ex){
+            stop();
 			ex.printStackTrace();
 		}
 	}
 
 	public void setListener(FSListener listener) {
 		this.listener = listener;
+	}
+
+    public void stop() {
+        Capsule capsule = new Capsule();
+        capsule.set("Status", "OFF");
+        listener.update(capsule);
+        isStopped = true;
+    }
+
+	private void disconnect(){
+		Capsule capsule = new Capsule();
+		capsule.set("Status", "DISCONNECTED");
+		listener.update(capsule);
+		isStopped = true;
 	}
 }

@@ -22,11 +22,23 @@ public class Sender {
     private Capsule capsuleFileMetdata;
     private Context context;
 
+    public boolean isStopped() {
+        return isStopped;
+    }
+
+    public void setStopped(boolean stopped) {
+        isStopped = stopped;
+    }
+
+    private boolean isStopped = false;
+
     public Sender(){
 		threads = new ArrayList<>();
 	}
 
 	public void sendAsFile(final Uri uriFile){
+
+        fileSizeTemp = 0;
 
 		Thread thread = new Thread(new Runnable() {
 
@@ -56,6 +68,9 @@ public class Sender {
 				try {
 					
 					for (Thread th : threads){
+                        if (isStopped){
+                            break;
+                        }
 						th.start();
 						th.join();
 					}
@@ -87,10 +102,16 @@ public class Sender {
             capsule.set("MODE", "SEND");
             listener.update(capsule);
             while(bis.available() > 0){
+                if (isStopped){
+                    break;
+                }
                 buffer[0] = (byte)2;
                 int bytesRead = 1;
                 int byteOffset = 0;
                 while(bytesRead < buffer.length){
+                    if (isStopped){
+                        break;
+                    }
                     byteOffset = bis.read(buffer, bytesRead, buffer.length - bytesRead);
                     if (byteOffset == -1){
                         break;
@@ -101,14 +122,20 @@ public class Sender {
                 sock = new Socket(destIPAddress, FileSync.PORT);
                 outputStream = sock.getOutputStream();
                 outputStream.write(buffer, 0, bytesRead);
-                System.out.println(bytesRead);
                 sock.close();
+                fileSizeTemp += bytesRead;
+                double val = ((double)fileSizeTemp/(double)fileLength);
+                int progress =  (int)(val * 100);
+                capsule.set("Status", null);
+                capsule.set("PROGRESS", progress);
+                listener.update(capsule);
             }
             capsule.set("Status", "OFF");
             listener.update(capsule);
 			bRet = true;
 			inputStream.close();
 		}catch(Exception ex){
+            stop();
 			ex.printStackTrace();
 		}
 		return bRet;
@@ -196,5 +223,62 @@ public class Sender {
 
     public void setContext(Context context) {
         this.context = context;
+    }
+
+    public void sendConnectionInfo(final String conInfo) {
+
+        Thread thread = new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                try{
+                    Socket sock = new Socket(destIPAddress, FileSync.PORT);
+                    OutputStream os = sock.getOutputStream();
+                    byte[] buffer = new byte[conInfo.getBytes().length + 1];
+                    buffer[0] = 4;
+                    byte [] b = conInfo.getBytes();
+                    for (int i = 0; i < b.length; i ++){
+                        buffer[i+1] = b[i];
+                    }
+                    os.write(buffer);
+                    sock.close();
+                }catch(Exception e){
+
+                }
+            }
+        });
+
+        thread.start();
+
+    }
+
+    public void stopPeering() {
+
+        Thread thread = new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                try{
+                    Socket sock = new Socket(destIPAddress, FileSync.PORT);
+                    OutputStream os = sock.getOutputStream();
+                    byte[] buffer = new byte[1];
+                    buffer[0] = 5;
+                    os.write(buffer);
+                    sock.close();
+                }catch(Exception e){
+
+                }
+            }
+        });
+
+        thread.start();
+
+    }
+
+    public void stop() {
+        Capsule capsule = new Capsule();
+        capsule.set("Status", "OFF");
+        listener.update(capsule);
+        isStopped = true;
     }
 }

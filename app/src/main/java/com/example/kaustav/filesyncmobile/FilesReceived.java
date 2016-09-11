@@ -29,7 +29,7 @@ public class FilesReceived extends AppCompatActivity implements FSListener {
     private ImageAdapter imageAdapter;
     private GridView gridView;
     private static final int ADD_THUMBNAIL = 1;
-    public static final int UPDATE_THUMBNAIL = 2;
+//    public static final int UPDATE_THUMBNAIL = 2;
     private Timer timer;
 
     final Handler handler = new Handler(){
@@ -43,17 +43,17 @@ public class FilesReceived extends AppCompatActivity implements FSListener {
         }
     };
 
-    final Handler handlerUpdate = new Handler(){
-
-        @Override
-        public void handleMessage(Message msg) {
-            if(msg.what==UPDATE_THUMBNAIL){
-                ViewGroup viewGroup = (ViewGroup) findViewById(R.id.rootViewFilesReceived);
-                viewGroup.invalidate();
-            }
-            super.handleMessage(msg);
-        }
-    };
+//    final Handler handlerUpdate = new Handler(){
+//
+//        @Override
+//        public void handleMessage(Message msg) {
+//            if(msg.what==UPDATE_THUMBNAIL){
+//                ViewGroup viewGroup = (ViewGroup) findViewById(R.id.rootViewFilesReceived);
+//                viewGroup.invalidate();
+//            }
+//            super.handleMessage(msg);
+//        }
+//    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,20 +87,20 @@ public class FilesReceived extends AppCompatActivity implements FSListener {
         }
     }
 
-    private void invalidateDefered(){
-        try{
-            timer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    Message msg = handlerUpdate.obtainMessage();
-                    msg.what = UPDATE_THUMBNAIL;
-                    handlerUpdate.sendMessage(msg);
-                }
-            }, 200);
-        }catch (Exception ex){
-            ex.printStackTrace();
-        }
-    }
+//    private void invalidateDefered(){
+//        try{
+//            timer.schedule(new TimerTask() {
+//                @Override
+//                public void run() {
+//                    Message msg = handlerUpdate.obtainMessage();
+//                    msg.what = UPDATE_THUMBNAIL;
+//                    handlerUpdate.sendMessage(msg);
+//                }
+//            }, 200);
+//        }catch (Exception ex){
+//            ex.printStackTrace();
+//        }
+//    }
 
     @Override
     public void update(Capsule capsule) {
@@ -125,6 +125,11 @@ public class FilesReceived extends AppCompatActivity implements FSListener {
                 for (int i = 0; i < listOfFiles.length; i ++){
                     Capsule capsule = new Capsule();
                     capsule.set("FileName", listOfFiles[i].getName());
+                    try {
+                        Thread.sleep(20);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                     update(capsule);
                 }
             }
