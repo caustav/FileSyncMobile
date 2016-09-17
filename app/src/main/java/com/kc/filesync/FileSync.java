@@ -85,7 +85,8 @@ public class FileSync implements ReaderListener{
         }
     }
 
-    public void reset(){
-        syncingMode = 0;
+    public void enable(){
+        receiver.setStopped(false);
+        sender.setStopped(false);
     }
 }

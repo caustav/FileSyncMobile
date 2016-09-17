@@ -43,18 +43,6 @@ public class FilesReceived extends AppCompatActivity implements FSListener {
         }
     };
 
-//    final Handler handlerUpdate = new Handler(){
-//
-//        @Override
-//        public void handleMessage(Message msg) {
-//            if(msg.what==UPDATE_THUMBNAIL){
-//                ViewGroup viewGroup = (ViewGroup) findViewById(R.id.rootViewFilesReceived);
-//                viewGroup.invalidate();
-//            }
-//            super.handleMessage(msg);
-//        }
-//    };
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -77,8 +65,11 @@ public class FilesReceived extends AppCompatActivity implements FSListener {
     private void openFile(int position){
         MimeTypeMap myMime = MimeTypeMap.getSingleton();
         Intent newIntent = new Intent(Intent.ACTION_VIEW);
-        String mimeType = myMime.getMimeTypeFromExtension(getFileExtensionFromUri(imageAdapter.getItem(position)));
-        newIntent.setDataAndType(imageAdapter.getItem(position), mimeType);
+        String fileName = imageAdapter.getItem(position);
+        String filePath = Environment.getExternalStorageDirectory() + "/FileSyncMobile/" + fileName;
+        Uri fileUri = Uri.fromFile(new File(filePath));
+        String mimeType = myMime.getMimeTypeFromExtension(ImageUtils.getFileExtensionFromPath(filePath));
+        newIntent.setDataAndType(fileUri, mimeType);
         newIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         try {
             getApplicationContext().startActivity(newIntent);
@@ -108,14 +99,15 @@ public class FilesReceived extends AppCompatActivity implements FSListener {
             String fileName = String.valueOf(capsule.get("FileName"));
             Message msg = handler.obtainMessage();
             msg.what = ADD_THUMBNAIL;
-            msg.obj = Environment.getExternalStorageDirectory() + "/FileSyncMobile" + "/" + fileName;
+//            msg.obj = Environment.getExternalStorageDirectory() + "/FileSyncMobile" + "/" + fileName;
+            msg.obj = fileName;
             handler.sendMessage(msg);
         }
     }
 
     public void updateWithImages() {
 
-        File file = new File(Environment.getExternalStorageDirectory() + "/FileSyncMobile");
+        File file = new File(Environment.getExternalStorageDirectory() + "/FileSyncMobile/.thumbnails");
         final File[] listOfFiles =  file.listFiles();
 
         Thread thread = new Thread(new Runnable() {
@@ -136,15 +128,4 @@ public class FilesReceived extends AppCompatActivity implements FSListener {
         });
         thread.start();
     }
-
-    private String getFileExtensionFromUri(Uri uri){
-        String filePath = uri.getPath();
-        int i = filePath.lastIndexOf('.');
-        String extension = "";
-        if (i > 0) {
-            extension = filePath.substring(i + 1);
-        }
-        return extension;
-    }
-
 }

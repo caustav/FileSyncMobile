@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.provider.OpenableColumns;
 
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -135,7 +136,7 @@ public class Sender {
 			bRet = true;
 			inputStream.close();
 		}catch(Exception ex){
-            stop();
+            //stop();
 			ex.printStackTrace();
 		}
 		return bRet;
@@ -165,6 +166,9 @@ public class Sender {
         boolean bRet = false;
         capsuleFileMetdata = getFileMetaData(fileUri,  context);
         try{
+            if (capsuleFileMetdata == null || capsuleFileMetdata.get("Name").isEmpty()){
+                throw new Exception("file not found");
+            }
             Socket sock = new Socket(destIPAddress, FileSync.PORT);
             String fileName = capsuleFileMetdata.get("Name");
             String fileSize = capsuleFileMetdata.get("Size");
@@ -201,6 +205,10 @@ public class Sender {
                     size = "Unknown";
                 }
 				capsule.set("Size", size);
+            }else {
+                File file = new File(uri.getPath());
+                capsule.set("Name", file.getName());
+                capsule.set("Size", String.valueOf(file.length()));
             }
         } finally {
 			if (cursor != null)

@@ -29,6 +29,7 @@ import android.webkit.MimeTypeMap;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.github.clans.fab.FloatingActionButton;
 import com.github.clans.fab.FloatingActionMenu;
@@ -43,6 +44,8 @@ import com.kc.filesync.FSListener;
 import com.kc.filesync.FileSync;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
@@ -121,6 +124,8 @@ public class MainActivity extends AppCompatActivity implements  FSListener, ZXin
                 Capsule capsule = (Capsule)msg.obj;
                 String s = capsule.get("FileName");
                 buildNotification("Halver", s);
+                ImageUtils.setContext(getApplicationContext());
+                ImageUtils.createThumbnail(s);
             }
             super.handleMessage(msg);
         }
@@ -145,6 +150,7 @@ public class MainActivity extends AppCompatActivity implements  FSListener, ZXin
         prefs = getSharedPreferences("com.example.kaustav.filesyncmobile", MODE_PRIVATE);
 
         createDirIfNotExists("/FileSyncMobile");
+        createDirIfNotExists("/FileSyncMobile/.thumbnails");
     }
 
     private void initUI(){
@@ -209,8 +215,8 @@ public class MainActivity extends AppCompatActivity implements  FSListener, ZXin
         if (prefs.getBoolean("firstrun", true) && currentapiVersion >= android.os.Build.VERSION_CODES.LOLLIPOP) {
             checkPermission();
         }
-
         prefs.edit().putBoolean("firstrun", false).commit();
+        fileSync.enable();
     }
 
     public boolean createDirIfNotExists(String path) {
@@ -239,17 +245,39 @@ public class MainActivity extends AppCompatActivity implements  FSListener, ZXin
         if (requestCode == READ_REQUEST_CODE && resultCode == RESULT_OK) {
             Uri uri = data.getData();
             ArrayList<Uri> fileUris = new ArrayList<Uri>();
-            if (data.getData() instanceof Uri){
-                fileUris.add(uri);
+            if (uri instanceof Uri){
+                if (isUriValid(uri)){
+                    fileUris.add(uri);
+                }else{
+                    Toast.makeText(getApplicationContext(), "Invalid URi", Toast.LENGTH_SHORT).show();
+                }
             }else{
                 ClipData clipData = data.getClipData();
                 for (int i = 0; i < clipData.getItemCount(); i++) {
                     ClipData.Item path = clipData.getItemAt(i);
-                    fileUris.add(path.getUri());
+                    if (isUriValid(path.getUri())){
+                        fileUris.add(path.getUri());
+                    }
                 }
             }
-            fileSync.sendAsFiles(destIPAddress, fileUris);
+            if (fileUris.size() > 0){
+                fileSync.sendAsFiles(destIPAddress, fileUris);
+            }
         }
+    }
+
+    private boolean isUriValid(Uri uri){
+        boolean ret = false;
+        try {
+            InputStream is = getApplicationContext().getContentResolver().openInputStream(uri);
+            if (is != null){
+                ret = true;
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        return ret;
     }
 
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
