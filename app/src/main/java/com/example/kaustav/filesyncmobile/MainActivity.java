@@ -65,6 +65,8 @@ public class MainActivity extends AppCompatActivity implements  FSListener, ZXin
     private String destIPAddress;
     private String destDeviceName;
 
+    private boolean scannerLaunched = false;
+
     private ZXingScannerView mScannerView;
     private ProgressDialog progressBar;
     FloatingActionMenu materialDesignFAM;
@@ -133,6 +135,8 @@ public class MainActivity extends AppCompatActivity implements  FSListener, ZXin
         if (wifimanger.isWifiEnabled() == true){
             WifiInfo info = wifimanger.getConnectionInfo();
             ipAddressFromWifi = toIPAddrInString(info.getIpAddress());
+        }else{
+            ipAddressFromWifi = "192.168.43.1";
         }
 
         initUI();
@@ -222,14 +226,6 @@ public class MainActivity extends AppCompatActivity implements  FSListener, ZXin
     }
 
     private void checkPermission(){
-//        int permissionCheck1 = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE);
-//        int permissionCheck2 = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
-//        if (permissionCheck1 != PackageManager.PERMISSION_GRANTED || permissionCheck2 != PackageManager.PERMISSION_GRANTED) {
-//            ActivityCompat.requestPermissions(this,
-//                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,
-//                            Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.CAMERA},
-//                    REQUEST_READ_WRITE_CAMERA_BT);
-//        }
         ActivityCompat.requestPermissions(this,
                 new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,
                         Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.CAMERA, 
@@ -259,7 +255,6 @@ public class MainActivity extends AppCompatActivity implements  FSListener, ZXin
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         if (requestCode == REQUEST_READ_WRITE_CAMERA_BT) {
             if ((grantResults.length > 0) && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                //initGridView();
             }
         }
     }
@@ -339,6 +334,7 @@ public class MainActivity extends AppCompatActivity implements  FSListener, ZXin
         super.onPause();
         if (mScannerView != null){
             mScannerView.stopCamera();
+            scannerLaunched = false;
         }
     }
 
@@ -358,9 +354,12 @@ public class MainActivity extends AppCompatActivity implements  FSListener, ZXin
             capsule.set("CONNECTION-INFO", destDeviceName);
             manageConnectionUI(capsule);
         }
+
+        scannerLaunched = false;
     }
 
     public void captureQRImage(){
+        scannerLaunched = true;
         mScannerView = new ZXingScannerView(this);   // Programmatically initialize the scanner view
         setContentView(mScannerView);
         mScannerView.setResultHandler(this); // Register ourselves as a handler for scan results.
@@ -379,7 +378,10 @@ public class MainActivity extends AppCompatActivity implements  FSListener, ZXin
 
     private String getPhoneName(){
         BluetoothAdapter device = BluetoothAdapter.getDefaultAdapter();
-        String deviceName = device.getName();
+        String deviceName = "";
+        if (device != null){
+            deviceName = device.getName();
+        }
         return deviceName;
     }
 
@@ -400,9 +402,13 @@ public class MainActivity extends AppCompatActivity implements  FSListener, ZXin
 
     @Override
     public void onBackPressed() {
-        if (mScannerView != null && (mScannerView.isEnabled() || mScannerView.isActivated())){
+        if (scannerLaunched){
             mScannerView.stopCamera();
+            scannerLaunched = false;
             initUI();
+        } else {
+            fileSync.stop();
+            this.finishAffinity();
         }
     }
 

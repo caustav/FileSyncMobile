@@ -7,7 +7,7 @@ import java.util.ArrayList;
 
 public class FileSync implements ReaderListener{
 
-	public static final int PORT = 12345;
+	public static final int PORT = 8888;
 
 //	public static final int READ_METADATA = 0;
 //	public static final int WRITE_FILECONTENT = 1;

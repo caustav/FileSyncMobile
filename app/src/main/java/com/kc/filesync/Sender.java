@@ -243,7 +243,7 @@ public class Sender {
                     os.write(buffer);
                     sock.close();
                 }catch(Exception e){
-
+                    e.printStackTrace();
                 }
             }
         });

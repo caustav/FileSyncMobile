@@ -92,13 +92,32 @@ public class ImageAdapter extends BaseAdapter {
             paintText.setTextSize(30);
             canvas.drawBitmap(bmpOri, 0, 0, null);
             String fileName = getFileNameFromUri(thumbNails.get(position));
-            if (fileName.length() > 0){
+            if (fileName!= null && fileName.length() > 10){
                 fileName = fileName.substring(0, 10);
+                fileName += "..";
+            }else if (fileName == null){
+                fileName = "Unknown";
             }
-            fileName += "..";
             canvas.drawText(fileName, bmpOri.getWidth()/2 , bmpOri.getHeight()/2, paintText);
+
+            if (isMusic(thumbNails.get(position))){
+                Drawable drawble = context.getResources().getDrawable(R.drawable.play1);
+                Bitmap bmpPlay = ((BitmapDrawable) drawble).getBitmap();
+                if (bmpPlay != null)
+                    canvas.drawBitmap(bmpPlay, bitmap.getWidth()/2 - bmpPlay.getWidth()/2,
+                            bitmap.getHeight()/2 - bmpPlay.getHeight()/2, null);
+            }
         }
         return bitmap;
+    }
+
+    private boolean isMusic(Uri uri) {
+        boolean bRet = false;
+        String extn = getFileExtensionFromUri(uri);
+        if (extn.compareToIgnoreCase("mp3") == 0){
+            bRet = true;
+        }
+        return bRet;
     }
 
     private boolean isVideo(String path){
@@ -160,5 +179,15 @@ public class ImageAdapter extends BaseAdapter {
         String filePath = uri.getPath();
         String filePathComp[] = filePath.split("/");
         return filePathComp[filePathComp.length - 1];
+    }
+
+    private String getFileExtensionFromUri(Uri uri){
+        String filePath = uri.getPath();
+        int i = filePath.lastIndexOf('.');
+        String extension = "";
+        if (i > 0) {
+            extension = filePath.substring(i + 1);
+        }
+        return extension;
     }
 }
