@@ -373,6 +373,7 @@ public class MainActivity extends AppCompatActivity implements  FSListener, ZXin
         if (str.length > 1){
             destIPAddress = str[0];
             destDeviceName = str[1];
+            fileSync.enable();
             fileSync.sendConnectionInfo(destIPAddress, getPhoneName(), ipAddressFromWifi);
             if (mScannerView != null){
                 mScannerView.stopCamera();

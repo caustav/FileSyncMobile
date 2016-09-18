@@ -19,17 +19,13 @@ import com.kc.filesync.Capsule;
 import com.kc.filesync.FSListener;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Timer;
-import java.util.TimerTask;
 
 public class FilesReceived extends AppCompatActivity implements FSListener {
 
     private ImageAdapter imageAdapter;
     private GridView gridView;
     private static final int ADD_THUMBNAIL = 1;
-//    public static final int UPDATE_THUMBNAIL = 2;
     private Timer timer;
 
     final Handler handler = new Handler(){
@@ -77,21 +73,6 @@ public class FilesReceived extends AppCompatActivity implements FSListener {
             Toast.makeText(getApplicationContext(), "No handler for this type of file.", Toast.LENGTH_LONG).show();
         }
     }
-
-//    private void invalidateDefered(){
-//        try{
-//            timer.schedule(new TimerTask() {
-//                @Override
-//                public void run() {
-//                    Message msg = handlerUpdate.obtainMessage();
-//                    msg.what = UPDATE_THUMBNAIL;
-//                    handlerUpdate.sendMessage(msg);
-//                }
-//            }, 200);
-//        }catch (Exception ex){
-//            ex.printStackTrace();
-//        }
-//    }
 
     @Override
     public void update(Capsule capsule) {
